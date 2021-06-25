@@ -6,6 +6,6 @@ class Interactable():
         self.sprite = sprite
         self.is_used = False
 
-    def health_up(self):
-        print("Item was used")
+    def health_up(self, user_health):
+        user_health += 20
         self.is_used = True
