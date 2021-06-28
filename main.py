@@ -3,7 +3,7 @@ import os
 import colors
 import click
 import math
-import interactable
+import monsters
 
 SCREENWIDTH = 100
 SCREENHEIGHT = 20
@@ -153,6 +153,8 @@ def use_item(item):
         user_int += 2
 
 
+monster_1 = monsters.Monster(100, "@", 7, 20, 55)
+
 game_on = False
 
 start_game = input("DO YOU WANT TU PLAY?")
@@ -169,6 +171,7 @@ items = ["\033[01m\033[31m+\033[0m",
 
 while game_on:
     os.system('cls')
+    game_map[monster_1.y][monster_1.x] = monster_1.char
     if game_map[unicode_man_y][unicode_man_x] == UNICODEMAN:
         pass
     else:
@@ -229,3 +232,9 @@ while game_on:
         old_tile = old_tile
         game_map[unicode_man_y][unicode_man_x] = UNICODEMAN
         continue
+    monster_path = monster_1.calculate_path(unicode_man_y, unicode_man_x)
+    if game_map[monster_path[0]][monster_path[1]] in walls:
+        continue
+    else:
+        game_map[monster_1.y][monster_1.x] = '.'
+        monster_1.walk_to_player(monster_path[0], monster_path[1])
