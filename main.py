@@ -153,7 +153,7 @@ def use_item(item):
         user_int += 2
 
 
-monster_1 = monsters.Monster(100, "@", 7, 20, 55)
+monster_1 = monsters.Monster(100, "\033[35m@\033[0m", 7, 20, 55)
 
 game_on = False
 
