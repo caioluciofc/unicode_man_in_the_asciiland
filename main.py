@@ -4,6 +4,8 @@ import colors
 import click
 import math
 import monsters
+import random
+
 
 SCREENWIDTH = 100
 SCREENHEIGHT = 20
@@ -12,14 +14,14 @@ SPACEBETWEENLINESCAMERA = int(SCREENWIDTH/2 - (CAMERAWIDTH)) - 1
 GAMENAME = "UNICODE MAN IN THE ASCIIVERSE!"
 UNICODEMAN = '\033[93m☺\033[0m'
 user_level = 1
-user_str = 1
+user_str = 5
 user_dex = 1
-user_int = 1
+user_def = 1
 user_health = 100
 user_status = "Good"
 
 walls = ["#", "@", "|", "/", "-", "8", "\\", "_", "\033[01m\033[31m+\033[0m",
-         "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m"]
+         "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m", "\033[35m@\033[0m"]
 
 game_map = []
 
@@ -82,7 +84,7 @@ def camera(gamemap, y, x):
 
 def gameScreen(gamemap, y, x):
     player_status = f"Health {user_health} Status: {user_status}"
-    player_stats = f"Level {user_level} STR {user_str} DEX {user_dex} INT {user_int}"
+    player_stats = f"Level {user_level} STR {user_str} DEX {user_dex} DEF {user_def}"
     print("/", end="")
     for i in range(0, SCREENWIDTH):
         print('-', end="")
@@ -141,7 +143,7 @@ def change_scene(file, unicode_y, unicode_x):
 def use_item(item):
     global user_health
     global user_dex
-    global user_int
+    global user_def
     # Red Cross +
     if item == "\033[01m\033[31m+\033[0m":
         user_health += 20
@@ -150,10 +152,65 @@ def use_item(item):
         user_dex += 2
     # Weird INT Symbol
     elif item == "\033[01m\033[31mЖ\033[0m":
-        user_int += 2
+        user_def += 2
 
 
-monster_1 = monsters.Monster(100, "\033[35m@\033[0m", 7, 20, 55)
+def monster_action(monster):
+    # global unicode_man_x
+    # global unicode_man_y
+    # global game_map
+    global user_health
+    if monster.health > 0:
+        monster_path = monster.calculate_path(unicode_man_y, unicode_man_x)
+        if monster_path[0] == unicode_man_y and monster_path[1] == unicode_man_x:
+            damage = monster.attack_player(user_def)
+            user_health -= damage
+        elif game_map[monster_path[0]][monster_path[1]] not in walls and game_map[monster_path[0]][monster_path[1]] != UNICODEMAN:
+            game_map[monster.y][monster.x] = '.'
+            monster_1.walk_to_player(monster_path[0], monster_path[1])
+
+
+def grab_item(items):
+    if game_map[unicode_man_y + 1][unicode_man_x] in items:
+        use_item(game_map[unicode_man_y + 1][unicode_man_x])
+        game_map[unicode_man_y + 1][unicode_man_x] = '.'
+    elif game_map[unicode_man_y - 1][unicode_man_x] in items:
+        use_item(game_map[unicode_man_y - 1][unicode_man_x])
+        game_map[unicode_man_y - 1][unicode_man_x] = '.'
+    elif game_map[unicode_man_y][unicode_man_x + 1] in items:
+        use_item(game_map[unicode_man_y][unicode_man_x + 1])
+        game_map[unicode_man_y][unicode_man_x + 1] = '.'
+    elif game_map[unicode_man_y][unicode_man_x - 1] in items:
+        use_item(game_map[unicode_man_y][unicode_man_x - 1])
+        game_map[unicode_man_y][unicode_man_x - 1] = '.'
+    elif game_map[unicode_man_y + 1][unicode_man_x + 1] in items:
+        use_item(game_map[unicode_man_y + 1][unicode_man_x + 1])
+        game_map[unicode_man_y + 1][unicode_man_x + 1] = '.'
+    elif game_map[unicode_man_y + 1][unicode_man_x - 1] in items:
+        use_item(game_map[unicode_man_y + 1][unicode_man_x - 1])
+        game_map[unicode_man_y + 1][unicode_man_x - 1] = '.'
+    elif game_map[unicode_man_y - 1][unicode_man_x + 1] in items:
+        use_item(game_map[unicode_man_y - 1][unicode_man_x + 1])
+        game_map[unicode_man_y - 1][unicode_man_x + 1] = '.'
+    elif game_map[unicode_man_y - 1][unicode_man_x - 1] in items:
+        use_item(game_map[unicode_man_y - 1][unicode_man_x - 1])
+        game_map[unicode_man_y - 1][unicode_man_x - 1] = '.'
+
+
+def attack_monster():
+    if game_map[unicode_man_y + 1][unicode_man_x] in monster_list or \
+            game_map[unicode_man_y - 1][unicode_man_x] in monster_list or \
+            game_map[unicode_man_y][unicode_man_x + 1] in monster_list or \
+            game_map[unicode_man_y][unicode_man_x - 1] in monster_list:
+        d6_roll = random.randint(1, 7)
+        monster_1.health -= ((d6_roll * user_str)/2)-monster_1.defense
+        if monster_1.health <= 0:
+            print(monster_1.y, "   ", monster_1.x)
+            game_map[monster_1.y][monster_1.x] = '.'
+            print("Monster is dead")
+
+
+monster_1 = monsters.Monster(1, "\033[35m@\033[0m", 7, 20, 55)
 
 game_on = False
 
@@ -169,9 +226,12 @@ game_map[24][55] = "\033[01m\033[31mЖ\033[0m"
 items = ["\033[01m\033[31m+\033[0m",
          "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m"]
 
+monster_list = ["\033[35m@\033[0m"]
+
 while game_on:
     os.system('cls')
-    game_map[monster_1.y][monster_1.x] = monster_1.char
+    if monster_1.health > 0:
+        game_map[monster_1.y][monster_1.x] = monster_1.char
     if game_map[unicode_man_y][unicode_man_x] == UNICODEMAN:
         pass
     else:
@@ -204,37 +264,14 @@ while game_on:
             game_map[unicode_man_y][unicode_man_x] = old_tile
             unicode_man_y, unicode_man_x = unicode_man_y + 1, unicode_man_x
     elif what_do_you_do == " ":
-        if game_map[unicode_man_y + 1][unicode_man_x] in items:
-            use_item(game_map[unicode_man_y + 1][unicode_man_x])
-            game_map[unicode_man_y + 1][unicode_man_x] = '.'
-        elif game_map[unicode_man_y - 1][unicode_man_x] in items:
-            use_item(game_map[unicode_man_y - 1][unicode_man_x])
-            game_map[unicode_man_y - 1][unicode_man_x] = '.'
-        elif game_map[unicode_man_y][unicode_man_x + 1] in items:
-            use_item(game_map[unicode_man_y][unicode_man_x + 1])
-            game_map[unicode_man_y][unicode_man_x + 1] = '.'
-        elif game_map[unicode_man_y][unicode_man_x - 1] in items:
-            use_item(game_map[unicode_man_y][unicode_man_x - 1])
-            game_map[unicode_man_y][unicode_man_x - 1] = '.'
-        elif game_map[unicode_man_y + 1][unicode_man_x + 1] in items:
-            use_item(game_map[unicode_man_y + 1][unicode_man_x + 1])
-            game_map[unicode_man_y + 1][unicode_man_x + 1] = '.'
-        elif game_map[unicode_man_y + 1][unicode_man_x - 1] in items:
-            use_item(game_map[unicode_man_y + 1][unicode_man_x - 1])
-            game_map[unicode_man_y + 1][unicode_man_x - 1] = '.'
-        elif game_map[unicode_man_y - 1][unicode_man_x + 1] in items:
-            use_item(game_map[unicode_man_y - 1][unicode_man_x + 1])
-            game_map[unicode_man_y - 1][unicode_man_x + 1] = '.'
-        elif game_map[unicode_man_y - 1][unicode_man_x - 1] in items:
-            use_item(game_map[unicode_man_y - 1][unicode_man_x - 1])
-            game_map[unicode_man_y - 1][unicode_man_x - 1] = '.'
+        grab_item(items)
+        attack_monster()
     else:
         old_tile = old_tile
         game_map[unicode_man_y][unicode_man_x] = UNICODEMAN
         continue
-    monster_path = monster_1.calculate_path(unicode_man_y, unicode_man_x)
-    if game_map[monster_path[0]][monster_path[1]] in walls:
-        continue
-    else:
-        game_map[monster_1.y][monster_1.x] = '.'
-        monster_1.walk_to_player(monster_path[0], monster_path[1])
+    monster_action(monster_1)
+    if user_health <= 0:
+        game_on = False
+
+print("Game Over")
