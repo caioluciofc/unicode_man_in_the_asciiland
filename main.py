@@ -21,7 +21,7 @@ user_health = 100
 user_status = "Good"
 
 walls = ["#", "@", "|", "/", "-", "8", "\\", "_", "\033[01m\033[31m+\033[0m",
-         "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m", "\033[35m@\033[0m"]
+         "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m"]
 
 game_map = []
 
@@ -197,20 +197,32 @@ def grab_item(items):
         game_map[unicode_man_y - 1][unicode_man_x - 1] = '.'
 
 
-def attack_monster():
-    if game_map[unicode_man_y + 1][unicode_man_x] in monster_list or \
-            game_map[unicode_man_y - 1][unicode_man_x] in monster_list or \
-            game_map[unicode_man_y][unicode_man_x + 1] in monster_list or \
-            game_map[unicode_man_y][unicode_man_x - 1] in monster_list:
-        d6_roll = random.randint(1, 7)
-        monster_1.health -= ((d6_roll * user_str)/2)-monster_1.defense
-        if monster_1.health <= 0:
-            print(monster_1.y, "   ", monster_1.x)
-            game_map[monster_1.y][monster_1.x] = '.'
-            print("Monster is dead")
+def attack_monster(monster, monsters_array):
+    d6_roll = random.randint(1, 7)
+    monster.health -= ((d6_roll * user_str)/2)-monster_1.defense
+    if monster.health <= 0:
+        print(monster_1.y, "   ", monster_1.x)
+        game_map[monster.y][monster.x] = '.'
+        monsters_array.remove(monster)
+        print("Monster is dead")
 
 
-monster_1 = monsters.Monster(1, "\033[35m@\033[0m", 7, 20, 55)
+monster_1 = monsters.Monster(100, "\033[35m@\033[0m", 7, 20, 60)
+monster_2 = monsters.Monster(100, "\033[35mO\033[0m", 7, 20, 55)
+monster_3 = monsters.Monster(100, "\033[35mM\033[0m", 7, 20, 65)
+monster_4 = monsters.Monster(100, "\033[35mN\033[0m", 7, 20, 45)
+monster_5 = monsters.Monster(100, "\033[35mX\033[0m", 7, 20, 40)
+
+monsters_array = [monster_1, monster_2, monster_3, monster_4, monster_5]
+
+monster_list = []
+
+for monster in monsters_array:
+    monster_list.append(monster.char)
+    walls.append(monster.char)
+
+
+print(monster_list)
 
 game_on = False
 
@@ -226,12 +238,12 @@ game_map[24][55] = "\033[01m\033[31mЖ\033[0m"
 items = ["\033[01m\033[31m+\033[0m",
          "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m"]
 
-monster_list = ["\033[35m@\033[0m"]
 
 while game_on:
     os.system('cls')
-    if monster_1.health > 0:
-        game_map[monster_1.y][monster_1.x] = monster_1.char
+    for monster in monsters_array:
+        if monster.health > 0:
+            game_map[monster.y][monster.x] = monster.char
     if game_map[unicode_man_y][unicode_man_x] == UNICODEMAN:
         pass
     else:
@@ -265,12 +277,23 @@ while game_on:
             unicode_man_y, unicode_man_x = unicode_man_y + 1, unicode_man_x
     elif what_do_you_do == " ":
         grab_item(items)
-        attack_monster()
+        for monster in monsters_array:
+            if abs((unicode_man_x - monster.x) + (unicode_man_y - monster.y)) == 1:
+                attack_monster(monster, monsters_array)
+                break
     else:
         old_tile = old_tile
         game_map[unicode_man_y][unicode_man_x] = UNICODEMAN
         continue
-    monster_action(monster_1)
+    for monster in monsters_array:
+        old_y = monster.y
+        old_x = monster.x
+        action = monster.monster_action(
+            unicode_man_y, unicode_man_x, user_def, walls, game_map)
+        if action[0] == "wlk":
+            game_map[old_y][old_x] = "."
+        if action[0] == "atk":
+            user_health -= action[1]
     if user_health <= 0:
         game_on = False
 
