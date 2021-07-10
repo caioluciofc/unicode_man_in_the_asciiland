@@ -1,4 +1,3 @@
-import emoji
 import os
 import colors
 import click
