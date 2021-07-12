@@ -4,7 +4,7 @@ import click
 import math
 import monsters
 import random
-
+import platform
 
 SCREENWIDTH = 100
 SCREENHEIGHT = 20
@@ -21,6 +21,8 @@ user_status = "Good"
 
 walls = ["#", "@", "|", "/", "-", "8", "\\", "_", "\033[01m\033[31m+\033[0m",
          "\033[01m\033[31m§\033[0m", "\033[01m\033[31mЖ\033[0m"]
+
+print(platform.system())
 
 game_map = []
 
@@ -239,7 +241,10 @@ items = ["\033[01m\033[31m+\033[0m",
 
 
 while game_on:
-    os.system('cls')
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
     for monster in monsters_array:
         if monster.health > 0:
             game_map[monster.y][monster.x] = monster.char
